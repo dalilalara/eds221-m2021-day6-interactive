@@ -47,7 +47,7 @@ Separate to clean up year column
 # Separating year column 
 # Using select function to further remove unwanted columns
 # Class of year column is still character 
-head(wb_clean)
+#head(wb_clean)
 # Now we need to convert to integers with mutate as seen  (53)
 
 wb_clean <- wb_indicators_long |>
@@ -93,9 +93,276 @@ ggplot(data = wb_subset, aes(x = year, y = co2_emissions_kt)) +
   facet_wrap(~country)
 ```
 
-```{r}
 
+
+# Lecture 12 
+
+## Filter() rows examples
+
+### Examples: Filter to only keep exact matches (single matches)
+`filter()` to extract specified rows 
+```{r}
+# Example 1 
+# height is greater than 180
+ex_1 <- starwars |>
+  filter(height > 180)
+
+#check minimum of subset 
+min(ex_1$height)
+```
+
+```{r}
+# Example 2
+# eye color is equal to character blue
+ex_2 <- starwars |>
+  filter(eye_color == "blue")
+
+#check unique()
+unique(ex_2$eye_color)
+```
+
+```{r}
+# Example 3
+
+#only contains homeworld Naboo
+ex_3 <- starwars |>
+  filter(homeworld == "Naboo")
+
+#check
+unique(ex_3$homeworld)
+```
+
+### Examples (multiple matches )
+Filtering to satisft multiple conditions
+```{r}
+# Example 4
+#height is > 180 and the homeworld is Tatooine 
+ex_4 <- starwars |>
+  filter(height > 180 & homeworld == "Tatooine")
+```
+
+```{r}
+# Example 5 
+# Create a subset where hair color is brown and species is human 
+ex_5 <- starwars |>
+  filter(hair_color == "brown" & species == "Human")
+```
+
+### Examples if any statements are true
+Filtering or statements `or`
+```{r}
+# Example 6
+# height > 180 or eye color is yellow
+ex_6 <- starwars |>
+  filter(height > 180 | eye_color == "yellow")
+```
+
+```{r}
+# Example 7
+# Subset where rows are kept if homeworld is Endor or species is droid
+ex_7 <- starwars |>
+  filter(homeworld == "Endor" | species == "Droid")
 ```
 
 
+### Writing an or statement in reference to a single variable
+```{r}
+# Example 8
+# eye color blue, red, brown
+ex_8 <- starwars |>
+  filter(eye_color == "blue" | eye_color == "red" | eye_color == "brown")
+
+# or exact same thing simplified `%in`
+#Example 9
+ex_9 <- starwars |>
+  filter(eye_color %in% c("blue", "brown", "red"))
+```
+
+### Never do
+```{r}
+# Example 10
+#asking if anything matches row in the given order of vector 
+ex_10 <- starwars |>
+  filter(eye_color == c("blue", "brown", "red"))
+```
+
+```{r}
+#Example 11
+# homeworld is Endor OR Tatoooine OR Naboo and height is < 150
+ex_11 <- starwars |>
+  filter(homeworld == "Endor" | homeworld == "Tatooine" | homeworld == "Naboo" & height < 150)
+```
+
+### Examples with the negate ! 
+
+```{r}
+#Example 12 
+#Species does not equal human
+ex_12 <- starwars |>
+  filter(species != "Human")
+
+#Example 13
+ex_13 <- starwars |>
+  filter(!species %in% c("Human", "Ewok", "Wookie"))
+```
+
+## `select()` select or exclude columns
+```{r}
+# Example 14 
+ex_14 <- wb_clean |>
+  select(country, year, co2_emission_kit)
+
+#Example 15
+ex_15 <- wb_clean |>
+  select(year:fossil_fuel_cons_pct)
+
+#Example 16
+ex_16 <- wb_clean |>
+  select(year:fossil_fuel_cons_pct, - access_electricity_pp)
+```
+
+```{r}
+#Example 17
+ex_17 <- wb_clean |>
+  filter(country %in% c("Bolivia", "Chile", "Mexico")) |>
+  select(country:fossil_fuel_cons_pct)
+
+#check
+unique(ex_17$country)
+names(ex_17)
+```
+
+```{r}
+#keeps 3 cols. and renames these 3 
+ex_18 <- wb_clean |>
+  select(year_new = year,
+        emissions = co2_emissions_kt,
+        country_name = country)
+
+```
+
+```{r}
+#example 18
+#wb_clean selecto only colomuns for country, tears, and water stress and reorder as year, country, waterstress and filter to only include observations for any three countries
+
+# Example 18
+ex_18 <- wb_clean |> 
+  select( year, country, water_stress) |> 
+  filter(country %in% c("Mexico", "Chile", "Albania"))
+
+#check
+unique(ex_18$country)
+```
+
+
+## rename 
+```{r}
+#Example 20
+#only these two columns get renamed 
+ex_20 <- wb_clean |>
+  rename(ffcp = fossil_fuel_cons_pct,
+         ws = water_stress)
+
+#rename any two columns
+ex_21 <- wb_clean |>
+  rename(ae_pp = access_electricity_pp,
+         co2_e_kt = co2_emissions_kt)
+
+```
+
+## `mutate` update an exsisting column, or add a new one 
+if you assign a NEW column name, it will add a new column to the end of your data frame. If you assign an exsisting column name, it will overwrite that column. 
+```{r}
+#adding a new column to wb_clean (tons)
+#Example 22
+ex_22 <- wb_clean |>
+  mutate(co2_emissions_t = co2_emissions_kt * 1000) |>
+  relocate(co2_emissions_t, .after = co2_emissions_kt)
+
+
+#Example 23
+#New column that just contains yay
+ex_23 <- wb_clean |> 
+  mutate(yay = "YAY")
+
+#example 24 
+ex_24 <- wb_clean |> 
+  mutate(year = as.character(year))
+
+class(ex_21$year)
+
+#Ex 25
+ex_25 <- ex_24 |>
+  mutate(year = as.numeric(year))
+```
+
+## dplyr::relocate
+```{r}
+#changing order of columns
+ex_26 <- wb_clean |> 
+  relocate(water_stress, .after = year)
+```
+
+## `group_by()` |> `summarize` functions 
+
+`group_by()` Creates groups under the hood based on variables you specify
+`summarize()` apply your function to EACH GROUP and return them in a nice table 
+```{r}
+# Summarize data of specified group in table
+ex_27 <- starwars |>
+  filter(homeworld %in% c("Naboo", "Tatooine")) |>
+  group_by(species, homeworld) |>
+  summarize(mean_height = mean(height, na.rm = TRUE),
+            mean_mass = mean(mass, na.rm = TRUE))
+```
+
+```{r}
+#Example 28
+#Make a data frame
+df <- tribble(
+  ~species, ~length, ~count,
+  "lobster", 12, 4,
+  "lobster", 16, 6,
+  "lobster", 15, 2
+)
+
+#make tidy by giving each observation its own row
+df_case <- df |>
+  uncount(count)
+```
+
+```{r}
+# count function
+#counts observations combo of group_by and summarize n()
+starwars |>
+  count(homeworld, species)
+
+
+#gives same output as above 
+starwars |>
+  group_by(homeworld, species) |>
+  summarize(size = n())
+```
+
+Practice Example 
+- start from wb_clean
+- keep observations for Nicaragua, Ecuador, Peru, Chile
+- and for years > 2005
+- keep column for country, year, and co2 emissions
+- add new column that is co2 emissions converted to megatons
+- find total co2 emissions still in data set by country
+
+```{r}
+practice_example <- wb_clean |>
+  filter(country %in% c("Nicaragua", "Ecuador", "Peru", "Chile") &
+           year > 2005) |>
+  select( year, country, co2_emissions_kt) |> 
+  mutate(co2_emissions_mt = co2_emissions_kt / 1000) |> 
+  group_by(country) |>
+  summarize(total_co2_mt = sum(co2_emissions_mt, na.rm = TRUE))
+
+#check year > 2005
+min(practice_example$year)
+names(practice_example)
+```
 
