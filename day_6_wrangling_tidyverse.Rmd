@@ -1,0 +1,101 @@
+---
+title: "Day 6  Data Wrangling Tidyverse"
+author: "Dalila Lara"
+date: "2022-08-15"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE)
+library(tidyverse)
+library(here)
+library(janitor)
+library(skimr)
+```
+
+## Read in the World Bank data files 
+```{r}
+#wrangling data so missing values as ... are turned into na values
+wb_indicators <- read_csv(here("data", "wb_indicators.csv"), na = c("..", "")) 
+wb_metadata <- read_csv(here("data", "wb_indicators_metadata.csv"))
+
+#view data 
+head(wb_indicators)
+skim(wb_indicators)
+```
+
+## Tidy up my data 
+pivot_longer + clean_names + separate()
+
+Pivot longer to get years into a single columns
+```{r}
+#names(wb_indicators)
+wb_indicators_long <- wb_indicators |>
+  pivot_longer(cols = `2001 [YR2001]`:`2020 [YR2020]`,
+               names_to = "year",
+               values_to = "indicator_values")
+
+#gives character not integer class
+class(wb_indicators_long$year)
+
+```
+
+Separate to clean up year column 
+  - Select columns
+  - Filter rows
+```{r}
+# Separating year column 
+# Using select function to further remove unwanted columns
+# Class of year column is still character 
+head(wb_clean)
+# Now we need to convert to integers with mutate as seen  (53)
+
+wb_clean <- wb_indicators_long |>
+  separate(col = year,
+           into = c("year", "year_chr"), sep = " ") |>
+  select(-year_chr, -`Series Code`, -`Country Code`) |>
+  mutate(year = as.numeric(year)) |> # or create new column year_new 
+  drop_na(`Series Name`) |> #drops na data from specified column 
+  #Widen the variables currently trapped in `Series Name` to be spread across multiple columns, and get the values that populated the columns from `indicator_value`
+  pivot_wider(names_from = `Series Name`, values_from = `indicator_values` ) 
+
+
+```
+
+
+```{r}
+#List all column possible values of variable 
+unique(wb_clean$`Series Name`)
+
+```
+
+```{r}
+#renaming column names 
+names(wb_clean) <- c("country", "year", "access_clean_fuels_pp", "access_electricity_pp", "co2_emissions_kt", "fossil_fuel_cons_pct", "water_stress")
+
+```
+
+Now making subset of 4 countries 
+```{r}
+#filter function
+wb_subset <- wb_clean |>
+  filter(country %in% c("Algeria", "Barbados", "Bulgaria", "Chile"))
+
+#chcks if filter function was successful
+unique(wb_subset$country)
+```
+
+
+Make a ggplot 
+```{r}
+ggplot(data = wb_subset, aes(x = year, y = co2_emissions_kt)) +
+  geom_line(aes(color = country)) +
+  facet_wrap(~country)
+```
+
+```{r}
+
+```
+
+
+
